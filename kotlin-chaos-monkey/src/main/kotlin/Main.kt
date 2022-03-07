@@ -1,26 +1,34 @@
+import mono.CommandData
 import mono.MonoDaemon
 import java.util.*
 import kotlin.system.exitProcess
 
 fun daemonAppDemo(): Int {
-    val commands: Queue<String> = LinkedList()
-    val daemon = MonoDaemon(commands)
+    val commandsIn: Queue<CommandData> = LinkedList()
+    val commandsOut: Queue<CommandData> = LinkedList()
+    val daemon = MonoDaemon(commandsIn, commandsOut)
     daemon.run()
 
     //Add commands in rate limit overed time
-    commands.add("1")
-    commands.add("2")
-    commands.add("3")
-    commands.add("4")
-    commands.add("5")
+    daemon.add("1")
+    daemon.add("2")
+    daemon.add("3")
+    daemon.add("4")
+    daemon.add("5")
 
     //Add next command which followed rate limit constraint
     Thread.sleep(MonoDaemon.RATE_LIMIT.toLong() * 1000)
-    commands.add("6")
+    daemon.add("6")
 
     //Manual stop daemon after hard code delay time
     Thread.sleep(MonoDaemon.RATE_LIMIT.toLong() * 4 * 1000)
     daemon.stop()
+
+    //Get results
+    for(commandOut in commandsOut) {
+        println("%s: %s (added: %s)"
+            .format(commandOut.command, commandOut.status, commandOut.added))
+    }
     return MonoDaemon.EXIT_OK
 }
 

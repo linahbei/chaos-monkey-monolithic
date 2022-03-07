@@ -4,18 +4,26 @@ import java.lang.System.*
 import java.util.*
 import javax.naming.TimeLimitExceededException
 
-class MonoDaemon(commands: Queue<String>) {
+public data class CommandData(val command: String, val added: Long, var status: String?=null)
+
+class MonoDaemon(commandsIn: Queue<CommandData>, commandsOut: Queue<CommandData>) {
     companion object {
         const val EXIT_OK = 0
         const val RATE_LIMIT = 3
+
+        const val STATUS_DROPPED = "dropped"
+        const val STATUS_EXECUTED = "executed"
+        const val STATUS_ADDED = "added"
     }
     private var runner: Thread? = null
-    private var commands: Queue<String>? = null
+    private var commandsIn: Queue<CommandData>? = null
+    private var commandsOut: Queue<CommandData>? = null
     private var latestExecutedTimestamp: Long
 
     init {
-        this.commands = commands
-        latestExecutedTimestamp = currentTimeMillis()
+        this.commandsIn = commandsIn
+        this.commandsOut = commandsOut
+        latestExecutedTimestamp = 0
     }
 
     private fun assertRateLimit() {
@@ -26,13 +34,21 @@ class MonoDaemon(commands: Queue<String>) {
         latestExecutedTimestamp = now
     }
 
-    private fun producer(command: String) {
+    private fun producer(command: CommandData) {
         try {
             assertRateLimit()
-            println("Execute: %s".format(command))
+            command.status = STATUS_EXECUTED
         } catch (timeLimitExceededException: TimeLimitExceededException) {
-            println("Drop: %s".format(command))
+            command.status = STATUS_DROPPED
+        } finally {
+            commandsOut!!.add(command)
         }
+    }
+
+    fun add(command: String) {
+        commandsIn!!.add(
+            CommandData(command, currentTimeMillis(), STATUS_ADDED)
+        )
     }
 
     fun stop() {
@@ -53,9 +69,9 @@ class MonoDaemon(commands: Queue<String>) {
                 while(true) {
                     Thread.sleep(1)
                     try {
-                        if( commands!!.isEmpty())
+                        if( commandsIn!!.isEmpty())
                             continue
-                        producer(commands!!.poll())
+                        producer(commandsIn!!.poll())
                     } catch (exception: Exception) {
                         print(exception.message)
                     }

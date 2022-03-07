@@ -21,3 +21,7 @@ dependencies {
 tasks.getByName<Test>("test") {
     useJUnitPlatform()
 }
+
+tasks.test {
+    useJUnitPlatform()
+}
