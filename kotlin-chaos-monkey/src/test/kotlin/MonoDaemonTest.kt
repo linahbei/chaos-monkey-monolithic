@@ -7,12 +7,12 @@ import kotlin.test.assertNotEquals
 
 internal class MonoDaemonTest {
     private val dummyCommandCost = 4
+    private val commandsIn: Queue<CommandData> = LinkedList()
+    private val commandsOut: Queue<CommandData> = LinkedList()
+    private val monoDaemon: MonoDaemon = MonoDaemon(commandsIn, commandsOut)
 
     @Test
     fun test_only_one_command_then_status_executed() {
-        val commandsIn: Queue<CommandData> = LinkedList()
-        val commandsOut: Queue<CommandData> = LinkedList()
-        val monoDaemon: MonoDaemon = MonoDaemon(commandsIn, commandsOut)
         monoDaemon.run()
         monoDaemon.add("1")
         Thread.sleep(MonoDaemon.RATE_LIMIT.toLong() * dummyCommandCost * 1000)
@@ -23,9 +23,6 @@ internal class MonoDaemonTest {
 
     @Test
     fun test_over_rate_limit_command_status_not_keep_added() {
-        val commandsIn: Queue<CommandData> = LinkedList()
-        val commandsOut: Queue<CommandData> = LinkedList()
-        val monoDaemon: MonoDaemon = MonoDaemon(commandsIn, commandsOut)
         monoDaemon.run()
         monoDaemon.add("1")
         monoDaemon.add("2")
@@ -37,10 +34,7 @@ internal class MonoDaemonTest {
     }
 
     @Test
-    fun test_in_rate_limit_commands_executed() {
-        val commandsIn: Queue<CommandData> = LinkedList()
-        val commandsOut: Queue<CommandData> = LinkedList()
-        val monoDaemon: MonoDaemon = MonoDaemon(commandsIn, commandsOut)
+    fun test_in_rate_limit_commands_status_executed() {
         monoDaemon.run()
         monoDaemon.add("1")
         Thread.sleep(MonoDaemon.RATE_LIMIT.toLong() * 1000)
